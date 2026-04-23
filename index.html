@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sarah Quiz Spieler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f6f2;--surface:#fff;--line:#d8d3cc;--text:#28251d;--muted:#66625a;--primary:#d85a9a;--ok:#2f7d32;--bad:#b42363;--r:22px;--shadow:0 12px 28px rgba(0,0,0,.10)}
+*{box-sizing:border-box} body{margin:0;font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:760px;margin:0 auto;padding:18px} .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
+h1{font-size:clamp(28px,7vw,42px);margin:0 0 8px} .muted{color:var(--muted);font-size:clamp(16px,4vw,20px)}
+.input,.btn{width:100%;min-height:60px;padding:16px 18px;border-radius:18px;font-size:clamp(18px,4.5vw,24px)}
+.input{border:2px solid var(--line)} .btn{border:none;background:var(--primary);color:#fff;font-weight:800}
+.q{font-size:clamp(26px,6vw,38px);line-height:1.15;font-weight:800;margin:10px 0 18px}
+.answers{display:grid;gap:14px} .ans{width:100%;text-align:left;border:2px solid var(--line);background:#f3f0ec;padding:18px;border-radius:20px;font-size:clamp(20px,5vw,28px);display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:center}
+.badge{width:48px;height:48px;border-radius:14px;background:#fff;border:3px solid #807a71;display:grid;place-items:center;font-weight:800} .ans.correct{background:#eaf7eb;border-color:var(--ok)} .ans.correct .badge{background:var(--ok);border-color:var(--ok);color:#fff} .ans.wrong{background:#fdeef5;border-color:var(--bad)} .ans.wrong .badge{background:var(--bad);border-color:var(--bad);color:#fff}
+.bar{height:16px;border-radius:999px;background:#e8e3dc;overflow:hidden;margin:16px 0 8px} .fill{height:100%;width:100%;background:linear-gradient(90deg,var(--primary),#5eb5ba);transition:width .3s}
+.time{font-size:clamp(24px,6vw,34px);font-weight:800} .result{font-size:clamp(24px,6vw,34px);font-weight:800;margin-top:12px} .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="card">
+<h1 style="text-align:center;">🎉 Sarah's Geburtstagsquiz 🎂</h1><div style="margin-top:16px;padding:16px;border:2px dashed #d8d3cc;border-radius:18px;background:#f3f0ec;text-align:center"><div style="font-size:clamp(24px,6vw,34px);font-weight:800;color:#28251d">Wie gut kennst du Sarah?</div><div style="margin-top:8px;font-size:clamp(16px,4vw,22px);color:#66625a">Wie gut kennst du Sarah wirklich?</div></div>
+<div id="login"><input id="name" class="input" placeholder="Dein Name" maxlength="24"><div style="height:12px"></div><button class="btn" id="join">Zum Quiz</button></div>
+<div id="game" class="hidden"><div class="muted" id="meta">Frage 1</div><div class="q" id="q"></div><div class="bar"><div id="fill" class="fill"></div></div><div class="time" id="time">20 Sekunden</div><div class="muted" id="score" style="margin-top:6px;font-size:clamp(18px,4vw,24px);font-weight:800;">Punkte: 0.0 / 375</div><div id="answers" class="answers"></div><div id="feedback" class="result"></div></div>
+</div></div>
+<audio id="music" loop preload="auto"><source src="https://orangefreesounds.com/wp-content/uploads/2014/10/Jeopardy-theme-song.mp3" type="audio/mpeg"></audio>
+<script>
+const quiz = [
+  { q: "Vor was hat Sarah Angst?", a: ["Spinnen", "Raupen", "Fliegen"], c: 0 },
+  { q: "Wie wird Sarah von ihrem Vater genannt?", a: ["Schatzel", "Mäusl", "Biene"], c: 1 },
+  { q: "Mag Sarah lieber süß oder salzig?", a: ["Süß", "Salzig"], c: 0 },
+  { q: "Was war Sarahs erster Crush?", a: ["Dennis", "Paul", "Olli"], c: 0 },
+  { q: "Was verliert Sarah am häufigsten?", a: ["Ihre Bankkarte", "Ihr Handy", "Ihr Ladekabel"], c: 0 },
+  { q: "Was macht Sarah glücklich?", a: ["Aperol", "Steak", "Urlaub in den Bergen"], c: 0 },
+  { q: "Ist Sarah eher ordentlich oder chaotisch?", a: ["Ordentlich", "Chaotisch"], c: 1 },
+  { q: "Wer hat sich damals im Kleiderschrank versteckt als Sarahs Eltern kamen?", a: ["Richard", "Dennis", "Kevin"], c: 2 },
+  { q: "Was ist Sarahs Lieblingsfarbe?", a: ["Rosa", "Grün", "Gelb"], c: 0 },
+  { q: "Was trinkt Sarah gern?", a: ["Wasser mit Geschmack", "Red Bull", "Tomatensaft"], c: 0 },
+  { q: "Wenn Sarah ein Kind bekommt, was würde sie sich eher wünschen?", a: ["Ein Junge", "Ein Mädchen"], c: 1 },
+  { q: "Was würde Sarah eher nehmen?", a: ["Auto", "Fahrrad", "PNV"], c: 0 },
+  { q: "Was würde Sarah nie freiwillig essen?", a: ["Scharfes Essen", "Oliven", "Zwiebeln"], c: 1 },
+  { q: "Auf was ist Sarah allergisch?", a: ["Walnüsse", "Äpfel", "Pferdehaare"], c: 0 },
+  { q: "Ist Sarah Frühaufsteher oder Langschläfer?", a: ["Frühaufsteher", "Langschläfer"], c: 1 },
+  { q: "Was würde Sarah am ehesten wählen?", a: ["Kaffee", "Tee", "Kakao"], c: 2 },
+  { q: "Welche Nüsse mag Sarah besonders?", a: ["Cashews", "Kürbiskerne", "Mandeln"], c: 0 },
+  { q: "Was ist Sarahs typischer Spruch?", a: ["Das Leben ist kein Ponyhof", "Man lernt nie aus", "Butter bei die Fische"], c: 2 },
+  { q: "Was beschreibt Sarahs Kochkunst am besten?", a: ["Gourmet Deluxe", "Improvisationskunst", "Überlebensmodus"], c: 2 },
+  { q: "Wofür ist Sarah bekannt?", a: ["Sehr organisiert", "Immer pünktlich", "Immer etwas verpeilt"], c: 2 },
+  { q: "Für welches Essen würde Sarah alles liegen lassen?", a: ["Wirsingkohlroulade", "Schweinskopfslze", "Leberkäsbrötchen"], c: 0 },
+  { q: "Was liegt IMMER in ihrer Tasche?", a: ["Lippenbalsam", "Taschentücher", "Ein Chaos aus allem"], c: 2 },
+  { q: "Wie würde Sarah in einer Zombie-Apokalypse reagieren?", a: ["Versteckt sich und hofft auf WLAN", "Wird Anführerin der Überlebenden", "Stolpert über ihre eigenen Schuhe"], c: 2 },
+  { q: "Was passiert, wenn Sarah etwas außer dem Handy verliert?", a: ["Panik, Suchtrupp, halber Haushalt auf den Kopf gestellt", "Wird schon wieder auftauchen", "Kauft es einfach neu"], c: 0 },
+  { q: "Wenn Sarah ein Getränk wäre, welches wäre sie?", a: ["Aperol Spritz – spritzig und fröhlich", "Latte Macchiato – gemütlich und wach", "Energydrink – Vollgas oder gar nicht"], c: 0 }
+];
+const DUR = 20, MAX_TOTAL = quiz.length * 15;
+let i = 0, t = DUR, score = 0, chosen = null, timer = null, startTime = 0;
+const id = document.getElementById.bind(document);
+id('join').onclick = () => { if (!id('name').value.trim()) return alert('Bitte Namen eingeben.'); id('login').classList.add('hidden'); id('game').classList.remove('hidden'); id('music').play().catch(() => {}); render(); start(); };
+function render() {
+  const q = quiz[i];
+  id('meta').textContent = `Frage ${i + 1} von ${quiz.length}`;
+  id('q').textContent = q.q;
+  id('answers').innerHTML = '';
+  id('feedback').textContent = '';
+  id('score').textContent = `Punkte: ${score.toFixed(1)} / ${MAX_TOTAL}`;
+  q.a.forEach((a, idx) => {
+    const b = document.createElement('button');
+    b.className = 'ans';
+    b.innerHTML = `<div class="badge">${String.fromCharCode(65 + idx)}</div><div>${a}</div>`;
+    b.onclick = () => answer(idx);
+    id('answers').appendChild(b);
+  });
+}
+function start() { clearInterval(timer); t = DUR; chosen = null; startTime = Date.now(); tick(); timer = setInterval(() => { t--; tick(); if (t <= 0) finish(-1); }, 1000); }
+function tick() { id('time').textContent = `${t} Sekunden`; id('fill').style.width = `${(t / DUR) * 100}%`; id('score').textContent = `Punkte: ${score.toFixed(1)} / ${MAX_TOTAL}`; }
+function answer(idx) { if (chosen !== null) return; chosen = idx; finish(idx); }
+function finish(idx) {
+  clearInterval(timer);
+  const q = quiz[i];
+  const btns = [...document.querySelectorAll('.ans')];
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = Math.max(0, DUR - elapsed);
+  const points = idx === q.c ? 5 + (remaining * 0.5) : 0;
+  btns.forEach((b, n) => { if (n === q.c) b.classList.add('correct'); if (idx !== -1 && n === idx && idx !== q.c) b.classList.add('wrong'); b.disabled = true; });
+  if (idx === q.c) { score += points; id('feedback').textContent = `Richtig! +${points.toFixed(1)} Punkte (5 + ${remaining} × 0,5)`; } else { id('feedback').textContent = 'Falsch! +0,0 Punkte'; }
+  id('score').textContent = `Punkte: ${score.toFixed(1)} / ${MAX_TOTAL}`;
+  setTimeout(() => { i++; if (i < quiz.length) { render(); start(); } else { id('q').textContent = 'Fertig!'; id('answers').innerHTML = ''; id('time').textContent = ''; id('fill').style.width = '0%'; id('score').textContent = `Punkte: ${score.toFixed(1)} / ${MAX_TOTAL}`; id('feedback').textContent = `Du hast insgesamt ${score.toFixed(1)} von ${MAX_TOTAL} möglichen Punkten erreicht.`; } }, 1200);
+}
+</script>
+</body>
+</html>
